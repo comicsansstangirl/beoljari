@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>별자리 · 학급 자리배치 프로토타입</title>
+<style>
+:root{
+  --brand-primary:#0C5FC9;
+  --brand-primary-hover:#063D86;
+  --brand-primary-pressed:#032B60;
+  --brand-accent:#FFDE26;
+  --brand-secondary:#FF9D00;
+  --brand-tertiary:#6433D5;
+  --good:#1494C3;
+  --good-subtle:#E8F2F8;
+  --warning:#FF9D00;
+  --warning-subtle:#FEF4E2;
+  --bad:#DB264D;
+  --bad-subtle:#FDECF1;
+  --info:#3B82F6;
+  --wt:#FFFFFF;
+  --bk:#060606;
+  --gr50:#FAFBFC; --gr100:#F4F6F8; --gr200:#E5E8EB; --gr300:#D1D6DB;
+  --gr400:#B0B8C1; --gr500:#8B95A1; --gr600:#6B7684; --gr700:#4E5968;
+  --gr800:#333D4B; --gr900:#191F28;
+  --shadow-sm: 0 1px 2px rgba(15,15,16,.04);
+  --shadow-md: 0 2px 8px rgba(15,15,16,.06);
+  --shadow-lg: 0 4px 16px rgba(15,15,16,.08);
+  --shadow-xl: 0 8px 24px rgba(15,15,16,.12);
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --sp-2xs:4px; --sp-sm:8px; --sp-md:12px; --sp-lg:16px; --sp-xl:24px; --sp-2xl:36px;
+  --font:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:var(--font);background:var(--gr100);color:var(--gr900);}
+button{font-family:var(--font);cursor:pointer;}
+.hidden{display:none !important;}
+
+/* ---------- header / nav ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;background:var(--wt);border-bottom:1px solid var(--gr200);
+  display:flex;align-items:center;justify-content:space-between;padding:var(--sp-md) var(--sp-xl);
+  box-shadow:var(--shadow-sm);
+}
+.brand{display:flex;align-items:center;gap:var(--sp-sm);font-weight:800;font-size:18px;color:var(--brand-primary);}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:var(--brand-secondary);}
+.classinfo{font-size:13px;color:var(--gr600);}
+.classinfo b{color:var(--gr900);}
+.purpose-badge{
+  display:inline-flex;align-items:center;gap:6px;background:var(--good-subtle);color:var(--good);
+  font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;margin-left:var(--sp-sm);
+}
+.tabs{display:flex;gap:4px;padding:0 var(--sp-xl);background:var(--wt);border-bottom:1px solid var(--gr200);}
+.tab-btn{
+  background:none;border:none;padding:12px 16px;font-size:14px;font-weight:600;color:var(--gr500);
+  border-bottom:2px solid transparent;transition:.15s;
+}
+.tab-btn:hover{color:var(--brand-primary);}
+.tab-btn.active{color:var(--brand-primary);border-bottom-color:var(--brand-primary);}
+.panel{padding:var(--sp-xl);max-width:1200px;margin:0 auto;}
+
+/* ---------- generic ---------- */
+.card{background:var(--wt);border:1px solid var(--gr200);border-radius:var(--r-lg);box-shadow:var(--shadow-md);}
+h1,h2,h3{margin:0 0 var(--sp-sm);}
+.section-title{font-size:20px;font-weight:800;margin-bottom:var(--sp-2xs);}
+.section-desc{font-size:13px;color:var(--gr600);margin-bottom:var(--sp-lg);}
+.btn{
+  border:none;border-radius:var(--r-sm);padding:10px 18px;font-size:14px;font-weight:700;
+  background:var(--brand-primary);color:var(--wt);transition:.15s;
+}
+.btn:hover{background:var(--brand-primary-hover);}
+.btn:active{background:var(--brand-primary-pressed);}
+.btn.secondary{background:var(--wt);color:var(--brand-primary);border:1px solid var(--brand-primary);}
+.btn.secondary:hover{background:var(--good-subtle);}
+.btn.ghost{background:transparent;color:var(--gr600);border:1px solid var(--gr300);}
+.btn.ghost:hover{background:var(--gr100);}
+.btn:disabled{background:var(--gr300);color:var(--gr500);cursor:not-allowed;}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;}
+.chip.synergy{background:var(--good-subtle);color:var(--good);}
+.chip.caution{background:var(--bad-subtle);color:var(--bad);}
+.chip.isolated{background:var(--warning-subtle);color:#B45500;}
+
+/* ---------- handover (killer cut) ---------- */
+.handover-wrap{display:flex;justify-content:center;padding-top:var(--sp-2xl);}
+.handover-card{max-width:560px;width:100%;padding:var(--sp-2xl);text-align:left;position:relative;overflow:hidden;}
+.handover-card::before{
+  content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle,var(--brand-accent) 0%,rgba(255,222,38,0) 70%);
+}
+.handover-badge{font-size:12px;font-weight:800;color:var(--brand-tertiary);background:#F1EBFC;padding:4px 10px;border-radius:999px;display:inline-block;margin-bottom:var(--sp-md);}
+.handover-title{font-size:22px;font-weight:800;line-height:1.4;margin-bottom:var(--sp-md);}
+.handover-title em{color:var(--brand-primary);font-style:normal;}
+.handover-meta{display:flex;gap:var(--sp-lg);margin:var(--sp-lg) 0;flex-wrap:wrap;}
+.handover-meta .stat{background:var(--gr50);border:1px solid var(--gr200);border-radius:var(--r-md);padding:var(--sp-md);flex:1;min-width:120px;}
+.handover-meta .stat b{display:block;font-size:20px;color:var(--brand-primary);}
+.handover-meta .stat span{font-size:12px;color:var(--gr600);}
+.handover-note{font-size:12px;color:var(--gr500);background:var(--gr50);border-radius:var(--r-md);padding:var(--sp-md);margin-top:var(--sp-lg);line-height:1.6;}
+.handover-from{font-size:13px;color:var(--gr700);margin-bottom:var(--sp-sm);}
+
+/* ---------- roster ---------- */
+.legend{font-size:12px;color:var(--gr600);background:var(--wt);border:1px solid var(--gr200);border-radius:var(--r-md);padding:var(--sp-md) var(--sp-lg);margin-bottom:var(--sp-lg);}
+.roster-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--sp-lg);}
+.student-card{padding:var(--sp-lg);transition:box-shadow .2s, outline .2s;}
+.student-card.flash{outline:3px solid var(--brand-secondary);box-shadow:var(--shadow-xl);}
+.student-card .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--sp-sm);}
+.student-card .name{font-weight:800;font-size:15px;}
+.code-badge{font-size:12px;font-weight:800;letter-spacing:1px;background:var(--brand-primary);color:var(--wt);padding:3px 8px;border-radius:6px;}
+.axis-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--gr500);margin-bottom:6px;}
+.axis-row .pole{width:16px;text-align:center;font-weight:700;color:var(--gr700);}
+.axis-track{flex:1;height:6px;background:var(--gr200);border-radius:3px;position:relative;}
+.axis-dot{position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:var(--brand-primary);transform:translate(-50%,-50%);}
+.rel-block{margin-top:var(--sp-sm);padding-top:var(--sp-sm);border-top:1px dashed var(--gr200);}
+.rel-block .rel-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.tag-btn{background:var(--gr50);border:1px solid var(--gr200);border-radius:999px;padding:2px 9px;font-size:12px;font-weight:600;color:var(--gr800);}
+.tag-btn:hover{border-color:var(--brand-primary);color:var(--brand-primary);}
+.no-rel{font-size:12px;color:var(--gr500);}
+
+/* ---------- purpose selector ---------- */
+.purpose-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--sp-md);margin-bottom:var(--sp-xl);}
+@media (max-width:900px){.purpose-grid{grid-template-columns:repeat(2,1fr);}}
+.purpose-card{padding:var(--sp-lg);text-align:left;border:2px solid var(--gr200);background:var(--wt);border-radius:var(--r-md);}
+.purpose-card b{display:block;font-size:14px;margin-bottom:4px;}
+.purpose-card span{font-size:12px;color:var(--gr600);line-height:1.5;}
+.purpose-card.active{border-color:var(--brand-primary);background:var(--good-subtle);}
+.gen-row{display:flex;align-items:center;gap:var(--sp-md);margin-bottom:var(--sp-xl);}
+
+.plan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--sp-lg);}
+.plan-card{padding:var(--sp-lg);}
+.plan-card.best{border-color:var(--brand-primary);box-shadow:var(--shadow-xl);}
+.plan-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:var(--sp-sm);}
+.plan-score{font-size:28px;font-weight:800;color:var(--brand-primary);}
+.plan-score span{font-size:13px;color:var(--gr500);font-weight:600;}
+.plan-strategy{font-size:12px;color:var(--brand-tertiary);font-weight:700;background:#F1EBFC;padding:2px 8px;border-radius:999px;}
+.plan-stats{display:flex;gap:8px;flex-wrap:wrap;margin:var(--sp-sm) 0;}
+.stat-pill{font-size:11px;font-weight:700;background:var(--gr50);border:1px solid var(--gr200);border-radius:999px;padding:3px 8px;color:var(--gr700);}
+.plan-reason{font-size:12.5px;color:var(--gr700);line-height:1.6;padding-left:16px;margin:var(--sp-sm) 0;}
+.warn-banner{background:var(--bad-subtle);color:var(--bad);font-size:12px;font-weight:700;padding:6px 10px;border-radius:var(--r-sm);margin-bottom:8px;}
+
+/* ---------- seating result ---------- */
+.room{display:flex;flex-direction:column;align-items:center;gap:var(--sp-xl);}
+.board{background:var(--gr800);color:var(--wt);font-weight:700;font-size:13px;padding:10px 60px;border-radius:var(--r-sm);letter-spacing:4px;}
+.pods-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-xl);width:100%;}
+@media (max-width:900px){.pods-grid{grid-template-columns:repeat(2,1fr);}}
+.pod{background:var(--gr50);border:1px solid var(--gr200);border-radius:var(--r-lg);padding:var(--sp-md);}
+.pod-label{font-size:11px;color:var(--gr500);font-weight:700;margin-bottom:8px;text-align:center;}
+.seat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.seat{
+  background:var(--wt);border:2px solid var(--gr200);border-radius:var(--r-md);padding:8px;text-align:center;
+  cursor:grab;user-select:none;transition:.12s;position:relative;
+}
+.seat:hover{border-color:var(--brand-primary);}
+.seat.selected{border-color:var(--brand-primary);background:var(--good-subtle);box-shadow:0 0 0 3px rgba(12,95,201,.15);}
+.seat.conflict{border-color:var(--bad);background:var(--bad-subtle);}
+.seat .sname{font-weight:800;font-size:13px;}
+.seat .scode{font-size:10px;color:var(--gr500);font-weight:700;}
+.energy-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;}
+.result-actions{display:flex;gap:var(--sp-md);margin-top:var(--sp-xl);}
+
+/* ---------- compare panel ---------- */
+.compare-panel{position:fixed;right:0;bottom:0;width:340px;max-width:100vw;background:var(--wt);border-top:1px solid var(--gr200);border-left:1px solid var(--gr200);border-radius:var(--r-lg) 0 0 0;box-shadow:var(--shadow-xl);padding:var(--sp-lg);z-index:100;max-height:70vh;overflow:auto;}
+.compare-panel h3{font-size:15px;}
+.compare-vs{display:flex;align-items:center;justify-content:space-between;margin:var(--sp-sm) 0;}
+.compare-vs .who{font-weight:800;font-size:13px;text-align:center;flex:1;}
+.compare-vs .vs{color:var(--gr400);font-size:12px;font-weight:700;padding:0 8px;}
+.gauge-wrap{margin:var(--sp-md) 0;}
+.gauge-num{font-size:32px;font-weight:800;text-align:center;}
+.gauge-num span{font-size:14px;color:var(--gr500);font-weight:600;}
+.gauge-track{height:10px;background:var(--gr200);border-radius:999px;overflow:hidden;margin-top:6px;}
+.gauge-fill{height:100%;border-radius:999px;transition:width .25s;}
+.verdict{text-align:center;font-size:13px;font-weight:800;padding:6px 0;border-radius:var(--r-sm);margin-top:6px;}
+.reason-list{margin:var(--sp-md) 0;padding:0;list-style:none;}
+.reason-list li{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--gr700);margin-bottom:6px;line-height:1.5;}
+.reason-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.compare-actions{display:flex;gap:8px;margin-top:var(--sp-md);}
+.compare-empty{font-size:13px;color:var(--gr500);text-align:center;padding:var(--sp-lg) 0;}
+
+/* ---------- history ---------- */
+.timeline{list-style:none;padding:0;margin:0;}
+.timeline li{display:flex;gap:var(--sp-md);padding:var(--sp-md) 0;border-bottom:1px solid var(--gr200);}
+.timeline .tdate{font-size:12px;color:var(--gr500);width:90px;flex-shrink:0;}
+.timeline .twho{font-weight:700;font-size:13px;}
+.timeline .twhat{font-size:13px;color:var(--gr700);}
+
+/* ---------- toast ---------- */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--gr900);color:var(--wt);padding:10px 20px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:var(--shadow-xl);z-index:200;opacity:0;transition:opacity .2s;}
+.toast.show{opacity:1;}
+
+@media print{
+  .topbar,.tabs,.result-actions,.compare-panel{display:none !important;}
+  .panel{padding:0;}
+  body{background:#fff;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="dot"></div>별자리</div>
+  <div class="classinfo"><b>2026학년도 4학년 3반</b> · 학생 24명<span class="purpose-badge" id="purposeBadge">목적: 수업 안정</span></div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="handover">인수인계</button>
+  <button class="tab-btn" data-tab="roster">학생 카드</button>
+  <button class="tab-btn" data-tab="generate">목적·자동배치</button>
+  <button class="tab-btn" data-tab="result">완료된 자리배치</button>
+  <button class="tab-btn" data-tab="history">변경 이력</button>
+</div>
+
+<!-- ============ HANDOVER ============ -->
+<section class="panel" data-panel="handover">
+  <div class="handover-wrap">
+    <div class="card handover-card">
+      <div class="handover-badge">학년 인수인계</div>
+      <div class="handover-from">🙋 김민준 선생님, 안녕하세요.</div>
+      <div class="handover-title">
+        지난해 3학년 3반을 맡았던 <em>박은지 선생님</em>이<br>남긴 성향·관계 기록이 이미 도착해 있어요.
+      </div>
+      <div class="handover-meta">
+        <div class="stat"><b>24명</b><span>학생 성향 카드</span></div>
+        <div class="stat"><b>11건</b><span>관계 태그 (시너지·주의)</span></div>
+        <div class="stat"><b>3명</b><span>연결 0건 · 관찰 필요</span></div>
+      </div>
+      <button class="btn" id="btnTakeover" style="margin-top:8px;">데이터 이어받기 →</button>
+      <div class="handover-note">
+        🔒 이 기록은 <b>교육 목적</b>으로만 사용되며 "판정"이 아닌 "관찰 메모" 형태로 저장돼요.
+        열람은 담임·학년부로 제한되고, 처음에는 <b>읽기 권한</b>으로 시작해 선생님이 관찰한 내용을 새로 더할 수 있어요.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROSTER ============ -->
+<section class="panel hidden" data-panel="roster">
+  <div class="section-title">학생 성향 카드</div>
+  <div class="section-desc">4축 성향(3~5점 슬라이더)과 연결 태그를 확인하세요. 태그를 누르면 해당 학생 카드로 이동합니다.</div>
+  <div class="legend">
+    <b>성향 축 범례</b> &nbsp; 에너지 Q조용·L활발 &nbsp;|&nbsp; 주도성 D주도·F수용 &nbsp;|&nbsp; 집중 S산만·C몰입 &nbsp;|&nbsp; 협동 I개별·T협동
+    &nbsp;·&nbsp; <span class="chip synergy">시너지</span> 함께 두면 좋은 영향 &nbsp; <span class="chip caution">주의</span> 마찰 우려, 분리 권장
+  </div>
+  <div class="roster-grid" id="rosterGrid"></div>
+</section>
+
+<!-- ============ GENERATE ============ -->
+<section class="panel hidden" data-panel="generate">
+  <div class="section-title">1. 배치 목적을 선택하세요</div>
+  <div class="section-desc" id="purposeDesc"></div>
+  <div class="purpose-grid" id="purposeGrid"></div>
+
+  <div class="section-title">2. 자동 배치 생성</div>
+  <div class="section-desc">성향 4축 · 관계 태그 · 배치 목적, 세 요소를 함께 계산해 배치안 3개를 만듭니다.</div>
+  <div class="gen-row">
+    <button class="btn" id="btnGenerate">배치안 3개 생성하기</button>
+    <span id="genStatus" style="font-size:12px;color:var(--gr500);"></span>
+  </div>
+  <div class="plan-grid" id="planGrid"></div>
+</section>
+
+<!-- ============ RESULT ============ -->
+<section class="panel hidden" data-panel="result">
+  <div class="section-title">완료된 자리배치</div>
+  <div class="section-desc">
+    좌석을 <b>클릭</b>하면 두 학생을 선택해 궁합 점수를 볼 수 있고, 좌석을 <b>드래그</b>해서 다른 좌석에 놓으면 자리를 바꿀 수 있어요.
+  </div>
+  <div id="resultEmpty" class="card" style="padding:40px;text-align:center;color:var(--gr500);">
+    아직 확정된 배치안이 없어요. <b>목적·자동배치</b> 탭에서 배치안을 먼저 생성하고 선택해주세요.
+  </div>
+  <div id="resultRoom" class="hidden">
+    <div class="room">
+      <div class="board">칠 &nbsp; 판</div>
+      <div class="pods-grid" id="podsGrid"></div>
+    </div>
+    <div class="result-actions">
+      <button class="btn secondary" id="btnRegenerate">다시 배치하기</button>
+      <button class="btn" id="btnConfirm">자리표 확정</button>
+      <button class="btn ghost" id="btnPrint">인쇄(PDF) 출력</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HISTORY ============ -->
+<section class="panel hidden" data-panel="history">
+  <div class="section-title">변경 이력</div>
+  <div class="section-desc">누가 언제 무엇을 바꿨는지 남아, 신뢰·책임 구조를 만듭니다. (데모 목업 데이터)</div>
+  <div class="card" style="padding:var(--sp-lg);">
+    <ul class="timeline" id="historyList"></ul>
+  </div>
+</section>
+
+<div class="compare-panel hidden" id="comparePanel"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= DATA ================= */
+const STUDENTS = [
+  {id:1,name:'김민준',energy:5,drive:2,focus:3,coop:4},
+  {id:2,name:'이서연',energy:4,drive:4,focus:2,coop:3},
+  {id:3,name:'박도윤',energy:2,drive:2,focus:5,coop:4},
+  {id:4,name:'최지우',energy:3,drive:3,focus:4,coop:5},
+  {id:5,name:'정하윤',energy:4,drive:2,focus:3,coop:3},
+  {id:6,name:'강주원',energy:2,drive:4,focus:4,coop:4},
+  {id:7,name:'조서준',energy:5,drive:3,focus:2,coop:2},
+  {id:8,name:'윤지안',energy:4,drive:4,focus:2,coop:2},
+  {id:9,name:'장은우',energy:3,drive:3,focus:3,coop:2},
+  {id:10,name:'임수아',energy:2,drive:2,focus:4,coop:5},
+  {id:11,name:'오예준',energy:3,drive:4,focus:3,coop:4},
+  {id:12,name:'한소율',energy:5,drive:2,focus:2,coop:3},
+  {id:13,name:'신도현',energy:4,drive:3,focus:2,coop:2},
+  {id:14,name:'권나윤',energy:2,drive:3,focus:3,coop:3},
+  {id:15,name:'황준서',energy:3,drive:2,focus:4,coop:4},
+  {id:16,name:'안유나',energy:2,drive:4,focus:4,coop:5},
+  {id:17,name:'송민재',energy:5,drive:3,focus:3,coop:2},
+  {id:18,name:'류하은',energy:4,drive:4,focus:2,coop:3},
+  {id:19,name:'문지호',energy:2,drive:2,focus:5,coop:4},
+  {id:20,name:'배아윤',energy:3,drive:3,focus:4,coop:5},
+  {id:21,name:'홍시우',energy:1,drive:3,focus:3,coop:2},
+  {id:22,name:'서다인',energy:2,drive:2,focus:4,coop:4},
+  {id:23,name:'노현우',energy:3,drive:4,focus:4,coop:5},
+  {id:24,name:'백채원',energy:4,drive:3,focus:3,coop:3},
+];
+
+const RELATIONS = [
+  {a:1,b:2,type:'caution',note:'3월 급식 순서로 다툰 뒤 서로 예민해진 상태예요.'},
+  {a:1,b:24,type:'caution',note:'모둠 활동 중 목소리가 커지며 다툰 적이 있어요.'},
+  {a:3,b:4,type:'synergy',note:'짝 활동에서 서로를 잘 이끌어 줘요.'},
+  {a:5,b:6,type:'synergy',note:'쉬는 시간에 늘 함께 다니며 사이가 좋아요.'},
+  {a:7,b:8,type:'caution',note:'장난이 심해지면 다투는 경우가 잦아요.'},
+  {a:10,b:11,type:'synergy',note:'모둠 발표를 함께 준비하며 호흡이 잘 맞아요.'},
+  {a:12,b:13,type:'caution',note:'사소한 오해로 자주 다퉈요.'},
+  {a:15,b:16,type:'synergy',note:'서로 배려하며 협동 활동을 잘 해요.'},
+  {a:17,b:18,type:'caution',note:'경쟁심이 강해 부딪히는 일이 잦아요.'},
+  {a:19,b:20,type:'synergy',note:'미술 활동에서 서로 도와가며 완성도를 높여요.'},
+  {a:22,b:23,type:'synergy',note:'발표 준비를 함께 하며 자신감을 얻어요.'},
+];
+
+const HISTORY_LOG = [
+  {date:'2026-02-10',who:'박은지 선생님(전 담임)',what:'학기 말, 24명 성향 카드와 관계 태그 11건을 정리해 인수인계 등록'},
+  {date:'2026-03-02',who:'김민준 선생님',what:'데이터 이어받기 완료 (읽기 권한으로 시작)'},
+  {date:'2026-03-03',who:'김민준 선생님',what:'배치 목적 "수업 안정" 선택, 배치안 3개 생성'},
+  {date:'2026-03-03',who:'김민준 선생님',what:'배치안 2 선택 후 창가 자리 1곳 드래그로 조정, 자리표 확정'},
+  {date:'2026-04-15',who:'김민준 선생님',what:'관찰 메모 추가: 장은우 학생, 모둠 활동 참여도 향상'},
+];
+
+/* ================= PURPOSE META ================= */
+const PURPOSES = {
+  stability:{label:'수업 안정',desc:'수업 방해를 최소화해요. 활발·산만·주도 성향이 한 구역에 몰리지 않게 흩고, [주의] 짝은 강하게 분리해요.',
+    w:{synergy:8,caution:-45,bothLoud:-22,anchor:14,leader:0,care:0,diversity:0}},
+  discuss:{label:'모둠 토론 활성',desc:'모든 모둠에서 대화가 끊기지 않게 해요. 모둠마다 주도형을 1명 이상 두고 [시너지] 관계를 최대화해요.',
+    w:{synergy:28,caution:-18,bothLoud:-4,anchor:4,leader:20,care:4,diversity:0}},
+  recover:{label:'관계 회복',desc:'소외·마찰을 최소화해요. 연결이 0개인 학생을 협동형 친구 곁에 우선 배치하고 [주의] 짝은 분리해요.',
+    w:{synergy:18,caution:-28,bothLoud:0,anchor:6,leader:0,care:30,diversity:0}},
+  diversity:{label:'다양성 섞기',desc:'끼리끼리를 방지해요. 모둠 안에서 성향 축이 한쪽으로 쏠리지 않도록 최대한 분산해요.',
+    w:{synergy:6,caution:-38,bothLoud:-8,anchor:2,leader:2,care:2,diversity:10}},
+};
+
+const state = {purpose:'stability', currentSeating:null, selectedSeats:[]};
+
+/* ================= HELPERS ================= */
+function byId(id){return STUDENTS.find(s=>s.id===id);}
+function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+function code(s){
+  return (s.energy<=3?'Q':'L')+(s.drive<=3?'D':'F')+(s.focus<=3?'S':'C')+(s.coop<=3?'I':'T');
+}
+function relationBetween(idA,idB){
+  return RELATIONS.find(r=>(r.a===idA&&r.b===idB)||(r.a===idB&&r.b===idA))||null;
+}
+function relationsOf(id){
+  return RELATIONS.filter(r=>r.a===id||r.b===id).map(r=>({
+    type:r.type, note:r.note, other: r.a===id? r.b : r.a
+  }));
+}
+function isIsolated(s){return relationsOf(s.id).length===0;}
+function avgAxisDiff(a,b){
+  return (Math.abs(a.energy-b.energy)+Math.abs(a.drive-b.drive)+Math.abs(a.focus-b.focus)+Math.abs(a.coop-b.coop))/4;
+}
+
+/* pairScore: core 100-point compatibility calc between two students under a purpose */
+function pairScore(a,b,purposeKey){
+  const w = PURPOSES[purposeKey].w;
+  let score = 50;
+  const reasons = [];
+  const rel = relationBetween(a.id,b.id);
+
+  if(rel){
+    if(rel.type==='synergy'){
+      score += w.synergy;
+      reasons.push({tone:'good', text:'[시너지] 관계예요 — '+rel.note});
+    }else{
+      score += w.caution;
+      reasons.push({tone:'bad', text:'[주의] 관계예요 — '+rel.note});
+    }
+  }
+
+  if(a.energy>=4 && b.energy>=4){
+    score += w.bothLoud;
+    reasons.push({tone:'bad', text:'둘 다 활발한 성향이라 붙여두면 교실이 산만해질 수 있어요.'});
+  }
+  const anchorPair = (a.focus<=2&&b.focus>=4)||(b.focus<=2&&a.focus>=4);
+  if(anchorPair){
+    score += w.anchor;
+    reasons.push({tone:'good', text:'산만한 성향의 학생을 몰입형 옆에 앉혀 집중을 도울 수 있어요.'});
+  }
+  const leaderFollower = (a.drive<=2&&b.drive>=4)||(b.drive<=2&&a.drive>=4);
+  if(leaderFollower){
+    score += w.leader;
+    reasons.push({tone:'good', text:'주도형과 수용형 조합이라 대화가 균형 있게 흘러갈 수 있어요.'});
+  }
+  const careCase = (isIsolated(a)&&b.coop>=4)||(isIsolated(b)&&a.coop>=4);
+  if(careCase){
+    score += w.care;
+    reasons.push({tone:'good', text:'연결이 적은 학생 곁에 협동형 친구를 두어 소외를 줄일 수 있어요.'});
+  }
+  const diff = avgAxisDiff(a,b);
+  if(w.diversity && diff>1.2){
+    score += w.diversity*diff;
+    reasons.push({tone:'good', text:'서로 성향이 달라 다양하게 섞이는 조합이에요.'});
+  }
+  if(reasons.length===0){
+    reasons.push({tone:'neutral', text:'특별한 시너지나 마찰 요인은 발견되지 않았어요.'});
+  }
+  return {score: clamp(Math.round(score),0,100), reasons, rel};
+}
+
+function verdictOf(score){
+  if(score>=70) return {tone:'good', label:'적절한 배치예요'};
+  if(score>=45) return {tone:'warning', label:'보통이에요, 지켜봐 주세요'};
+  return {tone:'bad', label:'재배치를 권장해요'};
+}
+function toneColor(tone){
+  return tone==='good'?'var(--good)':tone==='bad'?'var(--bad)':tone==='warning'?'var(--warning)':'var(--gr400)';
+}
+function toneBg(tone){
+  return tone==='good'?'var(--good-subtle)':tone==='bad'?'var(--bad-subtle)':tone==='warning'?'var(--warning-subtle)':'var(--gr100)';
+}
+
+/* ================= SEATING GENERATION ================= */
+function generateOnePlan(purposeKey, emphasis){
+  const w = Object.assign({}, PURPOSES[purposeKey].w);
+  if(emphasis==='relation'){ w.synergy*=1.6; w.caution*=1.3; }
+  if(emphasis==='trait'){ w.bothLoud*=1.6; w.anchor*=1.6; w.leader*=1.6; w.care*=1.6; w.diversity*=1.6; }
+
+  function biasedScore(a,b){
+    // reuse pairScore's logic but with (possibly) emphasized weights, only for placement decisions
+    const base = PURPOSES[purposeKey].w;
+    PURPOSES[purposeKey].w = w;
+    const r = pairScore(a,b,purposeKey).score;
+    PURPOSES[purposeKey].w = base;
+    return r;
+  }
+
+  const pods = Array.from({length:6}, ()=>[]);
+  const order = shuffle(STUDENTS);
+  for(const s of order){
+    let bestPod=-1, bestAvg=-Infinity;
+    for(let i=0;i<6;i++){
+      if(pods[i].length>=4) continue;
+      if(pods[i].some(m=>{const r=relationBetween(m.id,s.id); return r&&r.type==='caution';})) continue;
+      let sum=0;
+      for(const m of pods[i]) sum+=biasedScore(m,s);
+      const avg = pods[i].length? sum/pods[i].length : 50;
+      if(avg>bestAvg){bestAvg=avg;bestPod=i;}
+    }
+    if(bestPod===-1) bestPod = pods.findIndex(p=>p.length<4);
+    pods[bestPod].push(s);
+  }
+  return repairCautions(pods.map(p=>p.map(s=>s.id)));
+}
+
+/* hard constraint repair: [주의] 짝이 같은 모둠이면 충돌 없는 상대와 스왑 시도 */
+function podHasCaution(pod){
+  for(let i=0;i<pod.length;i++){
+    for(let j=i+1;j<pod.length;j++){
+      const r = relationBetween(pod[i],pod[j]);
+      if(r && r.type==='caution') return true;
+    }
+  }
+  return false;
+}
+function repairCautions(pods){
+  const cautionPairs = RELATIONS.filter(r=>r.type==='caution');
+  for(let pass=0; pass<20; pass++){
+    let fixedAny = false;
+    for(const rel of cautionPairs){
+      const podA = pods.findIndex(p=>p.includes(rel.a));
+      const podB = pods.findIndex(p=>p.includes(rel.b));
+      if(podA!==podB) continue;
+      let done = false;
+      for(let pi=0; pi<pods.length && !done; pi++){
+        if(pi===podA) continue;
+        for(let si=0; si<pods[pi].length && !done; si++){
+          const candidate = pods[pi][si];
+          const trialA = pods[podA].map(id=>id===rel.b?candidate:id);
+          const trialPi = pods[pi].map(id=>id===candidate?rel.b:id);
+          if(!podHasCaution(trialA) && !podHasCaution(trialPi)){
+            pods[podA] = trialA;
+            pods[pi] = trialPi;
+            fixedAny = true; done = true;
+          }
+        }
+      }
+    }
+    if(!fixedAny) break;
+  }
+  return pods;
+}
+
+function evaluatePlan(pods, purposeKey){
+  let total=0, pairs=0;
+  let cautionSeparated=0, synergyTogether=0, leaderPods=0, isolatedCared=0;
+  const totalCaution = RELATIONS.filter(r=>r.type==='caution').length;
+  const totalSynergy = RELATIONS.filter(r=>r.type==='synergy').length;
+  let violation = null;
+
+  pods.forEach(pod=>{
+    const students = pod.map(byId);
+    if(students.some(s=>s.drive<=2)) leaderPods++;
+    for(let i=0;i<students.length;i++){
+      for(let j=i+1;j<students.length;j++){
+        const {score} = pairScore(students[i],students[j],purposeKey);
+        total+=score; pairs++;
+        const rel = relationBetween(students[i].id,students[j].id);
+        if(rel && rel.type==='caution') violation = students[i].name+' · '+students[j].name;
+      }
+    }
+  });
+  RELATIONS.forEach(r=>{
+    const podA = pods.findIndex(p=>p.includes(r.a));
+    const podB = pods.findIndex(p=>p.includes(r.b));
+    if(r.type==='caution' && podA!==podB) cautionSeparated++;
+    if(r.type==='synergy' && podA===podB) synergyTogether++;
+  });
+  STUDENTS.forEach(s=>{
+    if(!isIsolated(s)) return;
+    const pod = pods.find(p=>p.includes(s.id));
+    if(pod && pod.map(byId).some(m=>m.id!==s.id && m.coop>=4)) isolatedCared++;
+  });
+
+  let score = pairs? Math.round(total/pairs) : 50;
+  if(violation) score = clamp(score-25,0,100);
+
+  return {score, cautionSeparated, totalCaution, synergyTogether, totalSynergy, leaderPods, isolatedCared, violation};
+}
+
+function buildRationale(purposeKey, stats){
+  const lines = [];
+  if(purposeKey==='stability'){
+    lines.push('[주의] 관계 '+stats.cautionSeparated+'/'+stats.totalCaution+'쌍을 서로 다른 모둠으로 분리했어요.');
+    lines.push('활발한 학생들이 한 모둠에 몰리지 않도록 분산했어요.');
+  }else if(purposeKey==='discuss'){
+    lines.push('모둠 '+stats.leaderPods+'/6곳에 주도형 학생을 배치해 대화를 이끌 수 있게 했어요.');
+    lines.push('[시너지] 관계 '+stats.synergyTogether+'/'+stats.totalSynergy+'쌍을 같은 모둠에 앉혔어요.');
+  }else if(purposeKey==='recover'){
+    lines.push('연결이 적었던 학생 '+stats.isolatedCared+'/3명을 협동형 친구 곁에 배치했어요.');
+    lines.push('[주의] 관계 '+stats.cautionSeparated+'/'+stats.totalCaution+'쌍을 분리했어요.');
+  }else{
+    lines.push('모둠 안에서 성향이 고르게 섞이도록 배치했어요.');
+    lines.push('[주의] 관계 '+stats.cautionSeparated+'/'+stats.totalCaution+'쌍은 기본으로 피했어요.');
+  }
+  if(stats.violation){
+    lines.unshift('⚠ 하드 제약 위반: '+stats.violation+' 이(가) 같은 모둠에 배치됐어요.');
+  }
+  return lines;
+}
+
+/* ================= RENDER: ROSTER ================= */
+function axisRow(label, poleA, poleB, value){
+  const pct = ((value-1)/4)*100;
+  return '<div class="axis-row"><span class="pole">'+poleA+'</span>'+
+    '<div class="axis-track"><div class="axis-dot" style="left:'+pct+'%"></div></div>'+
+    '<span class="pole">'+poleB+'</span></div>';
+}
+function renderRoster(){
+  const grid = document.getElementById('rosterGrid');
+  grid.innerHTML = STUDENTS.map(s=>{
+    const rels = relationsOf(s.id);
+    let relHtml;
+    if(rels.length===0){
+      relHtml = '<div class="no-rel">☆ 연결된 학생이 없어요 — 관찰이 필요해요.</div>';
+    }else{
+      relHtml = rels.map(r=>{
+        const label = r.type==='synergy'?'시너지':'주의';
+        return '<div class="rel-line"><span class="chip '+r.type+'">'+label+'</span>'+
+          '<button class="tag-btn" data-goto="'+r.other+'">@'+byId(r.other).name+'</button></div>';
+      }).join('');
+    }
+    return '<div class="card student-card" id="student-'+s.id+'">'+
+      '<div class="head"><span class="name">'+s.name+'</span><span class="code-badge">'+code(s)+'</span></div>'+
+      axisRow('에너지','Q','L',s.energy)+
+      axisRow('주도성','D','F',s.drive)+
+      axisRow('집중','S','C',s.focus)+
+      axisRow('협동','I','T',s.coop)+
+      '<div class="rel-block">'+relHtml+'</div>'+
+      '</div>';
+  }).join('');
+
+  grid.querySelectorAll('[data-goto]').forEach(btn=>{
+    btn.addEventListener('click',()=>focusStudent(+btn.dataset.goto));
+  });
+}
+function focusStudent(id){
+  switchTab('roster');
+  requestAnimationFrame(()=>{
+    const el = document.getElementById('student-'+id);
+    if(!el) return;
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.classList.add('flash');
+    setTimeout(()=>el.classList.remove('flash'),1500);
+  });
+}
+
+/* ================= RENDER: PURPOSE + GENERATE ================= */
+function renderPurposeGrid(){
+  const grid = document.getElementById('purposeGrid');
+  grid.innerHTML = Object.keys(PURPOSES).map(key=>{
+    const p = PURPOSES[key];
+    return '<button class="purpose-card'+(state.purpose===key?' active':'')+'" data-purpose="'+key+'">'+
+      '<b>'+p.label+'</b><span>'+p.desc+'</span></button>';
+  }).join('');
+  grid.querySelectorAll('[data-purpose]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      state.purpose = btn.dataset.purpose;
+      renderPurposeGrid();
+      updatePurposeBadge();
+      document.getElementById('planGrid').innerHTML='';
+      document.getElementById('genStatus').textContent='목적이 바뀌었어요. 다시 생성해주세요.';
+    });
+  });
+  document.getElementById('purposeDesc').textContent = PURPOSES[state.purpose].desc;
+}
+function updatePurposeBadge(){
+  document.getElementById('purposeBadge').textContent = '목적: '+PURPOSES[state.purpose].label;
+}
+
+function renderPlans(){
+  const strategies = [
+    {key:'balanced', label:'균형 배치'},
+    {key:'relation', label:'관계 중심 배치'},
+    {key:'trait', label:'성향 중심 배치'},
+  ];
+  const candidates = strategies.map(st=>{
+    const emphasis = st.key==='balanced'? null : st.key;
+    const pods = generateOnePlan(state.purpose, emphasis);
+    const stats = evaluatePlan(pods, state.purpose);
+    return {pods, stats, label:st.label};
+  }).sort((a,b)=>b.stats.score-a.stats.score);
+
+  const grid = document.getElementById('planGrid');
+  grid.innerHTML = candidates.map((c,i)=>{
+    const rationale = buildRationale(state.purpose, c.stats);
+    return '<div class="card plan-card'+(i===0?' best':'')+'">'+
+      (c.stats.violation? '<div class="warn-banner">⚠ 하드 제약 위반 감지: '+c.stats.violation+'</div>':'')+
+      '<div class="plan-head"><div class="plan-score">'+c.stats.score+'<span>/100</span></div>'+
+      '<span class="plan-strategy">'+c.label+'</span></div>'+
+      '<div class="plan-stats">'+
+        '<span class="stat-pill">주의 분리 '+c.stats.cautionSeparated+'/'+c.stats.totalCaution+'</span>'+
+        '<span class="stat-pill">시너지 동반 '+c.stats.synergyTogether+'/'+c.stats.totalSynergy+'</span>'+
+        '<span class="stat-pill">리더 포함 모둠 '+c.stats.leaderPods+'/6</span>'+
+      '</div>'+
+      '<ul class="plan-reason">'+rationale.map(l=>'<li>'+l+'</li>').join('')+'</ul>'+
+      '<button class="btn" data-select="'+i+'">이 배치안 선택하기</button>'+
+      '</div>';
+  }).join('');
+
+  grid.querySelectorAll('[data-select]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const c = candidates[+btn.dataset.select];
+      state.currentSeating = c.pods.map(p=>p.slice());
+      state.selectedSeats = [];
+      switchTab('result');
+      renderResult();
+      showToast('배치안을 적용했어요. 좌석을 클릭하거나 드래그해보세요.');
+    });
+  });
+  document.getElementById('genStatus').textContent = '배치안 3개를 계산했어요.';
+}
+
+/* ================= RENDER: RESULT (완료된 자리배치) ================= */
+function findSeat(id){
+  const pods = state.currentSeating;
+  for(let p=0;p<pods.length;p++){
+    const s = pods[p].indexOf(id);
+    if(s!==-1) return {pod:p, seat:s};
+  }
+  return null;
+}
+function swapSeats(idA, idB){
+  if(idA===idB) return;
+  const posA = findSeat(idA), posB = findSeat(idB);
+  if(!posA||!posB) return;
+  state.currentSeating[posA.pod][posA.seat] = idB;
+  state.currentSeating[posB.pod][posB.seat] = idA;
+}
+function energyColor(v){
+  return v<=2? 'var(--info)' : v>=4? 'var(--brand-secondary)' : 'var(--gr400)';
+}
+function renderResult(){
+  const empty = document.getElementById('resultEmpty');
+  const room = document.getElementById('resultRoom');
+  if(!state.currentSeating){
+    empty.classList.remove('hidden');
+    room.classList.add('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  room.classList.remove('hidden');
+
+  const podsGrid = document.getElementById('podsGrid');
+  podsGrid.innerHTML = state.currentSeating.map((pod,pi)=>{
+    const seats = pod.map(id=>{
+      const s = byId(id);
+      const isSelected = state.selectedSeats.includes(id);
+      const hasConflict = pod.some(otherId=>{
+        if(otherId===id) return false;
+        const r = relationBetween(id, otherId);
+        return r && r.type==='caution';
+      });
+      return '<div class="seat'+(isSelected?' selected':'')+(hasConflict?' conflict':'')+'" '+
+        'draggable="true" data-id="'+id+'">'+
+        '<div class="energy-dot" style="background:'+energyColor(s.energy)+'"></div>'+
+        '<div class="sname">'+s.name+'</div><div class="scode">'+code(s)+'</div></div>';
+    }).join('');
+    return '<div class="pod"><div class="pod-label">모둠 '+(pi+1)+'</div><div class="seat-grid">'+seats+'</div></div>';
+  }).join('');
+
+  podsGrid.querySelectorAll('.seat').forEach(seatEl=>{
+    const id = +seatEl.dataset.id;
+    seatEl.addEventListener('click', ()=>toggleSelect(id));
+    seatEl.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', String(id)));
+    seatEl.addEventListener('dragover', e=>e.preventDefault());
+    seatEl.addEventListener('drop', e=>{
+      e.preventDefault();
+      const srcId = +e.dataTransfer.getData('text/plain');
+      swapSeats(srcId, id);
+      renderResult();
+      renderComparePanel();
+      showToast('자리를 바꿨어요.');
+    });
+  });
+
+  renderComparePanel();
+}
+function toggleSelect(id){
+  const idx = state.selectedSeats.indexOf(id);
+  if(idx!==-1){
+    state.selectedSeats.splice(idx,1);
+  }else{
+    state.selectedSeats.push(id);
+    if(state.selectedSeats.length>2) state.selectedSeats.shift();
+  }
+  renderResult();
+}
+function renderComparePanel(){
+  const panel = document.getElementById('comparePanel');
+  const sel = state.selectedSeats;
+  if(sel.length<2){
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<h3>궁합 점수</h3><div class="compare-empty">좌석에서 두 학생을 선택하면<br>이 배치가 적절한지 100점 만점으로 보여드려요.</div>';
+    return;
+  }
+  const a = byId(sel[0]), b = byId(sel[1]);
+  const {score, reasons, rel} = pairScore(a,b,state.purpose);
+  const verdict = verdictOf(score);
+  const samePod = findSeat(a.id).pod === findSeat(b.id).pod;
+
+  panel.classList.remove('hidden');
+  panel.innerHTML =
+    '<h3>궁합 점수</h3>'+
+    '<div class="compare-vs"><span class="who">'+a.name+'<br><span class="code-badge">'+code(a)+'</span></span>'+
+    '<span class="vs">VS</span><span class="who">'+b.name+'<br><span class="code-badge">'+code(b)+'</span></span></div>'+
+    '<div class="gauge-wrap"><div class="gauge-num" style="color:'+toneColor(verdict.tone)+'">'+score+'<span>/100</span></div>'+
+    '<div class="gauge-track"><div class="gauge-fill" style="width:'+score+'%;background:'+toneColor(verdict.tone)+'"></div></div>'+
+    '<div class="verdict" style="color:'+toneColor(verdict.tone)+';background:'+toneBg(verdict.tone)+'">'+verdict.label+'</div></div>'+
+    (samePod? '<div class="chip caution" style="margin-bottom:8px;">현재 같은 모둠</div>' : '<div class="chip synergy" style="margin-bottom:8px;">현재 다른 모둠</div>')+
+    '<ul class="reason-list">'+reasons.map(r=>'<li><span class="reason-dot" style="background:'+toneColor(r.tone)+'"></span>'+r.text+'</li>').join('')+'</ul>'+
+    '<div class="compare-actions">'+
+      '<button class="btn secondary" id="btnSwapSelected">자리 바꾸기</button>'+
+      '<button class="btn ghost" id="btnClearSelected">선택 해제</button>'+
+    '</div>';
+
+  document.getElementById('btnSwapSelected').addEventListener('click',()=>{
+    swapSeats(a.id,b.id);
+    renderResult();
+    showToast('자리를 바꿨어요.');
+  });
+  document.getElementById('btnClearSelected').addEventListener('click',()=>{
+    state.selectedSeats=[];
+    renderResult();
+  });
+}
+
+/* ================= HISTORY ================= */
+function renderHistory(){
+  document.getElementById('historyList').innerHTML = HISTORY_LOG.map(h=>
+    '<li><span class="tdate">'+h.date+'</span><div><span class="twho">'+h.who+'</span><br><span class="twhat">'+h.what+'</span></div></li>'
+  ).join('');
+}
+
+/* ================= NAV ================= */
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+  document.querySelectorAll('[data-panel]').forEach(p=>p.classList.toggle('hidden', p.dataset.panel!==name));
+  document.getElementById('comparePanel').classList.toggle('hidden', name!=='result' || state.selectedSeats.length<2 && !state.currentSeating);
+  if(name!=='result') document.getElementById('comparePanel').classList.add('hidden');
+  if(name==='result') renderComparePanel();
+}
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>switchTab(btn.dataset.tab));
+});
+document.getElementById('btnTakeover').addEventListener('click',()=>{
+  switchTab('roster');
+  showToast('작년 담임 선생님의 기록을 이어받았어요.');
+});
+document.getElementById('btnGenerate').addEventListener('click', renderPlans);
+document.getElementById('btnRegenerate').addEventListener('click', ()=>switchTab('generate'));
+document.getElementById('btnConfirm').addEventListener('click', ()=>showToast('자리표가 확정됐어요. 교실에 게시해주세요.'));
+document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+
+/* ================= TOAST ================= */
+let toastTimer=null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+/* ================= INIT ================= */
+renderRoster();
+renderPurposeGrid();
+updatePurposeBadge();
+renderHistory();
+switchTab('handover');
+</script>
+</body>
+</html>
